@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STOCKROOM — Gestão de Equipamento · Vídeo &amp; LED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#090c0e;
+    --bg-2:#0d1114;
+    --panel:#12171b;
+    --panel-2:#161c21;
+    --line:#232b31;
+    --line-soft:#1b2227;
+    --text:#e9edef;
+    --dim:#8b969d;
+    --dim-2:#5c666c;
+    --accent:#3dff8b;
+    --accent-dim:rgba(61,255,139,.14);
+    --amber:#ffb020;
+    --danger:#ff4d5e;
+    --cyan:#35d0ff;
+    --violet:#b78cff;
+    --font-d:'Chakra Petch', 'Segoe UI', sans-serif;
+    --font-m:'Manrope', 'Segoe UI', sans-serif;
+    --r:12px;
+    --shadow:0 18px 50px -18px rgba(0,0,0,.8);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-m);
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+    background-image:
+      radial-gradient(1200px 600px at 80% -10%, rgba(53,208,255,.06), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(61,255,139,.05), transparent 55%),
+      radial-gradient(circle at 1px 1px, rgba(120,160,180,.07) 1px, transparent 0);
+    background-size:auto,auto,26px 26px;
+  }
+  /* scanlines + vignette overlay */
+  body::after{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0 1px, transparent 1px 3px),
+      radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%);
+  }
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#283139;border-radius:6px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-thumb:hover{background:#36424c}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  .app{display:flex;height:100vh;width:100%}
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar{
+    width:236px;flex:0 0 236px;background:linear-gradient(180deg,var(--panel),#0c1013);
+    border-right:1px solid var(--line);display:flex;flex-direction:column;padding:20px 14px 16px;
+    position:relative;z-index:10;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:0 6px 18px;border-bottom:1px solid var(--line-soft);margin-bottom:14px}
+  .brand .logo{
+    width:34px;height:34px;border-radius:8px;background:var(--accent);
+    display:grid;place-items:center;color:#04130a;font-family:var(--font-d);font-weight:700;font-size:17px;
+    box-shadow:0 0 22px rgba(61,255,139,.45);letter-spacing:-1px;
+  }
+  .brand .t{font-family:var(--font-d);font-weight:700;font-size:15px;letter-spacing:.5px;line-height:1.1}
+  .brand .t small{display:block;font-family:var(--font-m);font-weight:400;font-size:9px;color:var(--dim);letter-spacing:2px}
+  .nav{display:flex;flex-direction:column;gap:3px}
+  .nav button{
+    display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:0;color:var(--dim);
+    font-family:var(--font-m);font-size:13px;font-weight:500;padding:11px 12px;border-radius:9px;cursor:pointer;
+    transition:background .16s,color .16s,transform .16s;letter-spacing:.2px;
+  }
+  .nav button:hover{background:var(--panel-2);color:var(--text);transform:translateX(2px)}
+  .nav button.active{background:var(--accent-dim);color:var(--accent);box-shadow:inset 0 0 0 1px rgba(61,255,139,.22)}
+  .nav button .ic{width:16px;text-align:center;font-size:13px}
+  .nav button .badge{margin-left:auto;background:var(--panel-2);border:1px solid var(--line);color:var(--dim);font-size:10px;padding:1px 7px;border-radius:20px}
+  .nav button.active .badge{color:var(--accent);border-color:rgba(61,255,139,.35)}
+  .sidebar .foot{margin-top:auto;padding:12px 6px 0;border-top:1px solid var(--line-soft)}
+  .onair{display:flex;align-items:center;gap:8px;color:var(--dim);font-size:10px;letter-spacing:1.5px}
+  .onair .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  /* ---------- MAIN ---------- */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;z-index:5}
+  .topbar{
+    height:58px;flex:0 0 58px;display:flex;align-items:center;gap:16px;padding:0 24px;
+    border-bottom:1px solid var(--line);background:rgba(10,13,15,.6);backdrop-filter:blur(8px);
+  }
+  .topbar h1{font-family:var(--font-d);font-size:17px;font-weight:600;letter-spacing:.3px}
+  .topbar h1 em{font-style:normal;color:var(--accent)}
+  .topbar .sub{color:var(--dim);font-size:11px;letter-spacing:.5px}
+  .topbar .spacer{flex:1}
+  .clock{font-family:var(--font-d);font-size:14px;font-weight:600;color:var(--text);text-align:right;line-height:1.1}
+  .clock small{display:block;font-family:var(--font-m);font-size:10px;color:var(--dim);letter-spacing:1.5px;font-weight:400}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);
+    font-family:var(--font-m);font-size:12.5px;font-weight:500;padding:8px 13px;border-radius:8px;cursor:pointer;
+    transition:background .15s,border-color .15s,transform .1s;letter-spacing:.2px;
+  }
+  .btn:hover{background:#1d252c;border-color:#33404a;transform:translateY(-1px)}
+  .btn.primary{background:var(--accent);color:#04130a;border-color:transparent;font-weight:600}
+  .btn.primary:hover{background:#55ff9c;box-shadow:0 0 20px rgba(61,255,139,.35)}
+  .btn.ghost{background:transparent}
+  .btn.danger{color:var(--danger);border-color:rgba(255,77,94,.35)}
+  .btn.danger:hover{background:rgba(255,77,94,.12);border-color:var(--danger)}
+  .btn.sm{padding:5px 9px;font-size:11.5px;border-radius:7px}
+
+  .content{flex:1;overflow:auto;padding:26px 28px 40px;position:relative}
+
+  /* ---------- PANELS / CARDS ---------- */
+  .grid{display:grid;gap:16px}
+  .stats{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:22px}
+  .stat{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;
+  }
+  .stat .k{font-size:11px;color:var(--dim);letter-spacing:1.6px;text-transform:uppercase}
+  .stat .v{font-family:var(--font-d);font-size:30px;font-weight:700;margin-top:5px;line-height:1}
+  .stat .v small{font-size:12px;color:var(--dim);font-weight:500;margin-left:4px}
+  .stat::after{content:'';position:absolute;right:-20px;top:-20px;width:70px;height:70px;border-radius:50%;background:var(--tint,var(--accent));opacity:.08;filter:blur(6px)}
+  .stat.accent{--tint:var(--accent)}
+  .stat.cyan{--tint:var(--cyan)}
+  .stat.amber{--tint:var(--amber)}
+  .stat.danger{--tint:var(--danger)}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .panel .ph{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line-soft)}
+  .panel .ph h2{font-family:var(--font-d);font-size:14px;font-weight:600;letter-spacing:.8px;text-transform:uppercase}
+  .panel .ph .spacer{flex:1}
+  .panel .ph .hint{font-size:11px;color:var(--dim)}
+  .panel .pb{padding:16px 18px}
+
+  .empty{padding:46px 20px;text-align:center;color:var(--dim)}
+  .empty .big{font-size:30px;margin-bottom:8px;opacity:.5}
+  .empty p{font-size:13px}
+
+  .section-title{font-family:var(--font-d);font-size:12px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--dim);margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--line-soft)}
+
+  /* ---------- STATUS DOTS ---------- */
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:0 0 8px}
+  .dot.g{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .dot.a{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+  .dot.r{background:var(--danger);box-shadow:0 0 8px var(--danger)}
+  .dot.c{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+  .dot.v{background:var(--violet);box-shadow:0 0 8px var(--violet)}
+
+  /* ---------- INVENTORY ---------- */
+  .cat-block{margin-bottom:20px}
+  .cat-head{display:flex;align-items:center;gap:10px;margin:0 2px 10px}
+  .cat-head .name{font-family:var(--font-d);font-weight:600;font-size:14px;letter-spacing:.4px}
+  .cat-head .count{font-size:10px;color:var(--dim);border:1px solid var(--line);padding:1px 8px;border-radius:20px}
+  .inv-table{width:100%;border-collapse:collapse}
+  .inv-table th{text-align:left;font-size:11px;color:var(--dim);font-weight:500;letter-spacing:1.4px;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--line)}
+  .inv-table td{padding:9px 10px;border-bottom:1px solid var(--line-soft);font-size:13px}
+  .inv-table tr:hover td{background:rgba(255,255,255,.015)}
+  .inv-table .name-cell{font-weight:500;color:var(--text)}
+  .inv-table .unit{color:var(--dim);font-size:11px}
+  .stock-input{width:74px;background:var(--bg-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:6px 8px;font-family:var(--font-m);font-size:12px;text-align:right;transition:border-color .15s}
+  .stock-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+  .muted{color:var(--dim)}
+  .avail{font-size:11.5px}
+  .avail .num{font-family:var(--font-d);font-weight:600;font-size:14px}
+
+  /* ---------- EVENTS ---------- */
+  .ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+  .ev-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;position:relative;overflow:hidden;transition:transform .15s,border-color .15s}
+  .ev-card:hover{transform:translateY(-3px);border-color:#33404a;box-shadow:var(--shadow)}
+  .ev-card .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ec)}
+  .ev-card .name{font-family:var(--font-d);font-size:16px;font-weight:600;padding-left:8px}
+  .ev-card .loc{font-size:12px;color:var(--dim);padding-left:8px;margin-top:2px}
+  .ev-card .dates{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:13px;color:var(--text);padding-left:2px}
+  .ev-card .dates .arrow{color:var(--dim)}
+  .ev-card .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .chip{font-size:11px;background:var(--bg-2);border:1px solid var(--line);color:var(--dim);padding:3px 8px;border-radius:20px;letter-spacing:.3px}
+  .chip .n{color:var(--text);font-weight:600}
+  .ev-card .actions{display:flex;gap:6px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
+
+  /* ---------- ALLOCATIONS ---------- */
+  .ev-select{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:18px}
+  .ev-select .chip-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);color:var(--dim);padding:9px 14px;border-radius:9px;cursor:pointer;font-family:var(--font-m);font-size:12.5px;transition:all .15s;white-space:nowrap}
+  .ev-select .chip-btn:hover{color:var(--text);border-color:#33404a}
+  .ev-select .chip-btn.active{background:var(--accent-dim);color:var(--accent);border-color:rgba(61,255,139,.4)}
+  .ev-select .chip-btn .d{font-size:10.5px;color:var(--dim)}
+  .ev-select .chip-btn.active .d{color:var(--accent);opacity:.7}
+  .alloc-meta{display:flex;gap:20px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .alloc-meta .item{font-size:12px;color:var(--dim)}
+  .alloc-meta .item b{color:var(--text);font-weight:600}
+  .alloc-table{width:100%;border-collapse:collapse}
+  .alloc-table th{text-align:left;font-size:11px;color:var(--dim);font-weight:500;letter-spacing:1.4px;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--line)}
+  .alloc-table td{padding:9px 10px;border-bottom:1px solid var(--line-soft);font-size:13px}
+  .alloc-table tr:hover td{background:rgba(255,255,255,.015)}
+  .qty-input{width:74px;background:var(--bg-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:6px 8px;font-family:var(--font-m);font-size:12px;text-align:right;transition:border-color .15s}
+  .qty-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(53,208,255,.14)}
+  .qty-input.over{border-color:var(--danger);box-shadow:0 0 0 3px rgba(255,77,94,.14)}
+
+  /* ---------- TIMELINE ---------- */
+  .tl-wrap{overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+  .tl{min-width:100%;position:relative}
+  .tl-head{position:sticky;top:0;z-index:6;display:flex;background:var(--panel-2);border-bottom:1px solid var(--line)}
+  .tl-head .corner{flex:0 0 230px;position:sticky;left:0;z-index:8;background:var(--panel-2);border-right:1px solid var(--line);padding:8px 12px;font-size:11px;color:var(--dim);letter-spacing:1.4px;text-transform:uppercase}
+  .tl-days{display:flex}
+  .tl-day{width:58px;flex:0 0 58px;text-align:center;padding:7px 0;border-right:1px solid var(--line-soft)}
+  .tl-day .wd{display:block;font-size:10px;color:var(--dim-2);letter-spacing:1px}
+  .tl-day .dd{display:block;font-family:var(--font-d);font-size:14.5px;font-weight:600}
+  .tl-day.weekend{background:rgba(255,255,255,.02)}
+  .tl-day.is-today{background:var(--accent-dim)}
+  .tl-day.is-today .dd{color:var(--accent)}
+  .tl-group{padding:14px 14px 4px;font-family:var(--font-d);font-size:12px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);background:var(--bg-2);border-bottom:1px solid var(--line);position:sticky;left:0}
+  .tl-row{display:flex;border-bottom:1px solid var(--line-soft)}
+  .tl-row:last-child{border-bottom:0}
+  .tl-label{flex:0 0 230px;position:sticky;left:0;z-index:5;background:var(--panel);border-right:1px solid var(--line);padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:3px}
+  .tl-label .nm{font-weight:600;font-size:13px;color:var(--text);display:flex;align-items:center;gap:7px}
+  .tl-label .st{font-size:10.5px;color:var(--dim)}
+  .tl-track{position:relative;flex:1;background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 1px, transparent 1px 58px);
+  }
+  .tl-bar{position:absolute;border-radius:8px;color:#0d1f16;font-size:12.5px;font-weight:700;font-family:var(--font-m);letter-spacing:.1px;padding:0 10px;display:flex;align-items:center;gap:5px;overflow:visible;white-space:nowrap;background:var(--bar);box-shadow:inset 0 -1px 0 rgba(0,0,0,.10),0 1px 5px rgba(0,0,0,.28);cursor:default;transition:filter .12s}
+  .tl-bar b{font-weight:800}
+  .tl-bar:hover{filter:brightness(1.12)}
+  .tl-bar.conflict{box-shadow:inset 0 -2px 0 rgba(0,0,0,.18),0 0 0 2px var(--danger),0 0 12px rgba(255,77,94,.5)}
+  .tl-today{position:absolute;top:0;bottom:0;width:1px;background:var(--accent);opacity:.55;pointer-events:none;z-index:4}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+  .legend .lg{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--dim)}
+  .legend .sw{width:11px;height:11px;border-radius:3px}
+
+  /* ---------- CONFLICTS ---------- */
+  .conf-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line-soft);align-items:flex-start}
+  .conf-item:last-child{border-bottom:0}
+  .conf-item .eq-name{font-weight:600;color:var(--text);font-size:13.5px}
+  .conf-item .det{font-size:12px;color:var(--dim);margin-top:3px;line-height:1.6}
+  .conf-item .det b{color:var(--danger)}
+  .conf-item .right{margin-left:auto;text-align:right;flex:0 0 auto}
+  .conf-item .over{font-family:var(--font-d);font-weight:700;color:var(--danger);font-size:16px}
+
+  /* ---------- MODAL ---------- */
+  .modal-bg{position:fixed;inset:0;background:rgba(3,5,6,.7);backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:60px 20px 20px}
+  .modal-bg.show{display:flex;animation:fade .15s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal-card{width:100%;max-width:520px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;animation:rise .18s}
+  @keyframes rise{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+  .modal-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line-soft)}
+  .modal-head h3{font-family:var(--font-d);font-size:15px;font-weight:600;flex:1}
+  .modal-close{background:none;border:0;color:var(--dim);font-size:18px;cursor:pointer;line-height:1}
+  .modal-close:hover{color:var(--danger)}
+  .modal-body{padding:20px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11px;color:var(--dim);letter-spacing:1.4px;text-transform:uppercase;margin-bottom:6px}
+  .field input,.field select{width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font-family:var(--font-m);font-size:13.5px;transition:border-color .15s}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+  .field .row{display:flex;gap:10px}
+  .field .row>*{flex:1}
+  .swatches{display:flex;gap:8px;flex-wrap:wrap}
+  .swatch{width:26px;height:26px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:transform .12s}
+  .swatch:hover{transform:scale(1.12)}
+  .swatch.sel{border-color:#fff;box-shadow:0 0 0 2px var(--bg)}
+  .modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid var(--line-soft)}
+
+  /* ---------- TOAST ---------- */
+  .toast{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column;gap:8px}
+  .toast .t{background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--accent);color:var(--text);padding:11px 16px;border-radius:9px;font-size:13px;box-shadow:var(--shadow);animation:rise .2s;max-width:340px}
+  .toast .t.err{border-left-color:var(--danger)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">S</div>
+      <div class="t">STOCKROOM<small>VÍDEO · LED</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-view="dashboard" class="active"><span class="ic">◧</span>Visão Geral</button>
+      <button data-view="inventory"><span class="ic">▤</span>Inventário</button>
+      <button data-view="events"><span class="ic">◇</span>Eventos<span class="badge" id="nb-events">0</span></button>
+      <button data-view="allocations"><span class="ic">⇄</span>Alocações<span class="badge" id="nb-alloc">0</span></button>
+      <button data-view="timeline"><span class="ic">▦</span>Calendário de Distribuição</button>
+    </nav>
+    <div class="foot">
+      <div class="onair"><span class="dot"></span> SISTEMA LOCAL · OFFLINE-FIRST</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Visão <em>Geral</em></h1>
+        <div class="sub">Gestão de stock &amp; distribuição por datas</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="clock"><span id="clock-t">--:--:--</span><small id="clock-d"></small></div>
+      <button class="btn ghost" onclick="exportData()" title="Exportar dados (JSON)">⬇ Exportar</button>
+      <button class="btn ghost" onclick="document.getElementById('importFile').click()" title="Importar dados (JSON)">⬆ Importar</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+      <button class="btn primary" onclick="quickAdd()">+ Adicionar</button>
+    </header>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal-card">
+    <div class="modal-head"><h3 id="modalTitle"></h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" id="modalSave">Guardar</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   STOCKROOM — single-file stock & scheduling manager
+   Data model: inventory[] / events[] / allocations[]
+   Persisted to localStorage. Conflicts = overlap demand > stock.
+   ============================================================ */
+const STORAGE_KEY = 'stockroom_v2';
+const EVENT_COLORS = ['#a7f3c9','#a5e8f7','#ffe0a3','#ffc2c9','#d7c4f5','#ffc8e8','#b5f0e6','#fff0b3','#ffd9b3','#d4f5b3'];
+const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const WD = ['D','S','T','Q','Q','S','S'];
+
+let state;
+let currentView = 'dashboard';
+let selectedEventId = null;
+
+/* ---------- utils ---------- */
+function uid(){ return 'id-' + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-3); }
+function toISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayISO(){ return toISO(new Date()); }
+function fmt(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+function fmtShort(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return d+'/'+m; }
+function addDays(iso,n){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return toISO(d); }
+function diffDays(a,b){ return Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00'))/86400000); }
+function overlaps(as,ae,bs,be){ return as<=be && bs<=ae; }
+function eachDay(start,end){ const out=[]; let d=new Date(start+'T00:00:00'); const e=new Date(end+'T00:00:00'); while(d<=e){ out.push(toISO(d)); d.setDate(d.getDate()+1); } return out; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function equipmentById(id){ return state.inventory.find(i=>i.id===id); }
+function eventById(id){ return state.events.find(e=>e.id===id); }
+function categories(){ const seen=[]; state.inventory.forEach(i=>{ if(!seen.includes(i.category)) seen.push(i.category); }); return seen; }
+
+/* ---------- persistence ---------- */
+function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ showToast('Não foi possível guardar', 'err'); } }
+function load(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){ const d=JSON.parse(raw); if(d && d.inventory && d.events && d.allocations) return d; } }catch(e){} return null; }
+
+/* ---------- seed (Novembro — dados do Excel) ---------- */
+function seedState(){
+  const inv = [
+    {id:'eq-omega',      name:'OmegaPix',            category:'LED — Tiles',             unit:'tiles', stock:240, notes:''},
+    {id:'eq-traulux-reto',name:'Traulux Reto',        category:'LED — Tiles',             unit:'tiles', stock:440, notes:''},
+    {id:'eq-traulux-flex',name:'Traulux Flex',        category:'LED — Tiles',             unit:'tiles', stock:160, notes:''},
+    {id:'eq-unillumin',  name:'Unillumin',            category:'LED — Tiles',             unit:'tiles', stock:80,  notes:''},
+    {id:'eq-resolume',   name:'Servidor Resolume',    category:'Servidores',              unit:'un.',   stock:4,   notes:''},
+    {id:'eq-pixera',     name:'Servidor Pixera',      category:'Servidores',              unit:'un.',   stock:1,   notes:''},
+    {id:'eq-vmix',       name:'Servidor vMix',        category:'Servidores',              unit:'un.',   stock:1,   notes:''},
+    {id:'eq-watchout',   name:'Servidor Watchout',    category:'Servidores',              unit:'un.',   stock:2,   notes:''},
+    {id:'eq-s3',         name:'Barco S3-4K',          category:'Processadores / Switchers',unit:'un.', stock:1,   notes:''},
+    {id:'eq-e2',         name:'Barco E2',             category:'Processadores / Switchers',unit:'un.', stock:1,   notes:''},
+    {id:'eq-encore3',    name:'Barco Encore3',        category:'Processadores / Switchers',unit:'un.', stock:2,   notes:''},
+    {id:'eq-pds',        name:'Barco PDS',            category:'Processadores / Switchers',unit:'un.', stock:2,   notes:''},
+    {id:'eq-dsm',        name:'DSM',                  category:'Processadores / Switchers',unit:'un.', stock:3,   notes:''},
+    {id:'eq-dynabook',   name:'Dynabook',             category:'Portáteis',               unit:'un.',   stock:4,   notes:''},
+    {id:'eq-macmitti',   name:'MacBook (Mitti)',      category:'Portáteis',               unit:'un.',   stock:2,   notes:''},
+    {id:'eq-macm4',      name:'MacBook (M4)',         category:'Portáteis',               unit:'un.',   stock:2,   notes:''},
+    {id:'eq-hdx20',      name:'Projetor Barco HDX20', category:'Projetores',              unit:'un.',   stock:4,   notes:''},
+  ];
+  const evs = [
+    {id:'ev-mariott',  name:'Mariott',                location:'Mariott',              start:'2026-11-11', end:'2026-11-13', color:EVENT_COLORS[0]},
+    {id:'ev-ccb1',     name:'CCB',                    location:'CCB',                  start:'2026-11-12', end:'2026-11-13', color:EVENT_COLORS[1]},
+    {id:'ev-corinthia',name:'Corinthia',              location:'Corinthia',            start:'2026-11-14', end:'2026-11-18', color:EVENT_COLORS[2]},
+    {id:'ev-oeiras',   name:'Palácio Marquês Pombal', location:'OEIRAS',               start:'2026-11-15', end:'2026-11-17', color:EVENT_COLORS[3]},
+    {id:'ev-ccb2',     name:'CCB',                    location:'CCB',                  start:'2026-11-17', end:'2026-11-18', color:EVENT_COLORS[4]},
+    {id:'ev-tic',      name:'TIC',                    location:'TIC',                  start:'2026-11-17', end:'2026-11-19', color:EVENT_COLORS[5]},
+    {id:'ev-marinha',  name:'Museu Marinha',          location:'Museu Marinha',        start:'2026-11-18', end:'2026-11-18', color:EVENT_COLORS[6]},
+    {id:'ev-fil',      name:'FIL EXPO',               location:'FIL EXPO',             start:'2026-11-18', end:'2026-11-22', color:EVENT_COLORS[7]},
+  ];
+  const A = [];
+  const al = (e,q,qt)=>{ A.push({id:uid(), eventId:e, equipmentId:q, qty:qt}); };
+  // LED tiles
+  al('ev-mariott','eq-omega',80);
+  al('ev-ccb1','eq-omega',60);
+  al('ev-corinthia','eq-traulux-reto',250);
+  al('ev-oeiras','eq-omega',96); al('ev-oeiras','eq-traulux-flex',48);
+  al('ev-ccb2','eq-omega',120);
+  al('ev-tic','eq-traulux-reto',168); al('ev-tic','eq-omega',96); al('ev-tic','eq-traulux-flex',96);
+  al('ev-marinha','eq-unillumin',66);
+  al('ev-fil','eq-omega',24);
+  // Servidores / processadores / portáteis / projetores
+  al('ev-mariott','eq-s3',1); al('ev-mariott','eq-dsm',2); al('ev-mariott','eq-macmitti',1);
+  al('ev-ccb1','eq-resolume',1); al('ev-ccb1','eq-dsm',1);
+  al('ev-corinthia','eq-resolume',2); al('ev-corinthia','eq-e2',1); al('ev-corinthia','eq-dsm',2);
+  al('ev-oeiras','eq-resolume',1); al('ev-oeiras','eq-encore3',1); al('ev-oeiras','eq-dsm',1);
+  al('ev-ccb2','eq-resolume',1); al('ev-ccb2','eq-encore3',1); al('ev-ccb2','eq-dsm',1);
+  al('ev-tic','eq-resolume',2); al('ev-tic','eq-pixera',1); al('ev-tic','eq-macm4',1); al('ev-tic','eq-encore3',1); al('ev-tic','eq-dsm',2); al('ev-tic','eq-hdx20',3);
+  al('ev-marinha','eq-resolume',1); al('ev-marinha','eq-vmix',1); al('ev-marinha','eq-pds',1);
+  al('ev-fil','eq-macmitti',1); al('ev-fil','eq-pds',1);
+  return { inventory:inv, events:evs, allocations:A, version:1 };
+}
+
+/* ---------- conflict engine ---------- */
+function getConflicts(){
+  const out = [];
+  state.inventory.forEach(eq=>{
+    const allocs = state.allocations
+      .filter(a=>a.equipmentId===eq.id)
+      .map(a=>({qty:a.qty, ev:eventById(a.eventId)}))
+      .filter(a=>a.ev);
+    if(!allocs.length) return;
+    const demand = {};
+    allocs.forEach(a=>{ eachDay(a.ev.start,a.ev.end).forEach(d=>{ demand[d]=(demand[d]||0)+a.qty; }); });
+    const over = Object.keys(demand).filter(d=>demand[d]>eq.stock).sort();
+    if(!over.length) return;
+    const ranges = [];
+    over.forEach(d=>{
+      const last = ranges[ranges.length-1];
+      if(last && diffDays(last.end,d)<=1) last.end=d;
+      else ranges.push({start:d,end:d});
+    });
+    const involved = allocs.filter(a=>ranges.some(r=>overlaps(r.start,r.end,a.ev.start,a.ev.end)));
+    out.push({equip:eq, ranges, involved, maxDemand:Math.max(...over.map(d=>demand[d]))});
+  });
+  return out;
+}
+function availabilityFor(equip, ev){
+  let maxDemand = 0;
+  const others = state.allocations
+    .filter(a=>a.equipmentId===equip.id && a.eventId!==ev.id)
+    .map(a=>({qty:a.qty, e:eventById(a.eventId)}))
+    .filter(x=>x.e);
+  eachDay(ev.start,ev.end).forEach(d=>{
+    let sum=0; others.forEach(o=>{ if(d>=o.e.start && d<=o.e.end) sum+=o.qty; });
+    if(sum>maxDemand) maxDemand=sum;
+  });
+  return { stock:equip.stock, inUse:maxDemand, available:equip.stock-maxDemand };
+}
+
+function peakUsage(equipId){
+  const allocs = state.allocations
+    .filter(a=>a.equipmentId===equipId)
+    .map(a=>({qty:a.qty, ev:eventById(a.eventId)}))
+    .filter(x=>x.ev);
+  if(!allocs.length) return 0;
+  const demand={};
+  allocs.forEach(a=>{ eachDay(a.ev.start,a.ev.end).forEach(d=>{ demand[d]=(demand[d]||0)+a.qty; }); });
+  return Math.max(0,...Object.values(demand));
+}
+
+/* ---------- rendering ---------- */
+function go(view){ currentView=view; document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); render(); }
+function render(){
+  const titles={dashboard:'Visão Geral',inventory:'Inventário',events:'Eventos',allocations:'Alocações',timeline:'Calendário de Distribuição'};
+  document.getElementById('pageTitle').innerHTML = titles[currentView].replace('Geral','<em>Geral</em>');
+  document.getElementById('nb-events').textContent = state.events.length;
+  document.getElementById('nb-alloc').textContent = state.allocations.filter(a=>a.qty>0).length;
+  const c=document.getElementById('content'); c.innerHTML='';
+  const fn={dashboard:viewDashboard,inventory:viewInventory,events:viewEvents,allocations:viewAllocations,timeline:viewTimeline}[currentView];
+  c.innerHTML = fn();
+}
+
+/* ---------- dashboard ---------- */
+function viewDashboard(){
+  const conflicts = getConflicts();
+  const activeAlloc = state.allocations.filter(a=>a.qty>0).length;
+  const upcoming = [...state.events].sort((a,b)=>a.start.localeCompare(b.start)).filter(e=>e.end>=todayISO()).slice(0,6);
+  const conflictHtml = conflicts.length
+    ? conflicts.map(c=>{
+        const ranges = c.ranges.map(r=>r.start===r.end?fmt(r.start):fmt(r.start)+' → '+fmt(r.end)).join(', ');
+        const evs = [...new Set(c.involved.map(i=>i.ev.name))].join(' · ');
+        return `<div class="conf-item">
+          <span class="dot r" style="margin-top:4px"></span>
+          <div><div class="eq-name">${esc(c.equip.name)}</div>
+          <div class="det">Sobre-alocado em <b>${esc(ranges)}</b><br>Procura máx. <b>${c.maxDemand}</b> / stock <b>${c.equip.stock}</b> · ${esc(evs)}</div></div>
+          <div class="right"><div class="over">+${c.maxDemand - c.equip.stock}</div><div class="det">acima do stock</div></div>
+        </div>`;
+      }).join('')
+    : `<div class="empty"><div class="big">✓</div><p>Sem conflitos de stock. Tudo dentro da capacidade.</p></div>`;
+
+  const upcomingHtml = upcoming.length ? upcoming.map(e=>`
+    <div class="conf-item">
+      <span class="dot" style="margin-top:4px;background:${e.color}"></span>
+      <div><div class="eq-name">${esc(e.name)}</div><div class="det">${esc(e.location)}</div></div>
+      <div class="right"><div class="det" style="font-family:var(--font-d);font-weight:600;color:var(--text)">${fmtShort(e.start)} → ${fmtShort(e.end)}</div></div>
+    </div>`).join('') : `<div class="empty"><p>Sem eventos futuros.</p></div>`;
+
+  return `
+  <div class="grid stats">
+    <div class="stat accent"><div class="k">Equipamentos</div><div class="v">${state.inventory.length}<small>tipos</small></div></div>
+    <div class="stat cyan"><div class="k">Eventos</div><div class="v">${state.events.length}<small>ativos</small></div></div>
+    <div class="stat amber"><div class="k">Alocações</div><div class="v">${activeAlloc}<small>registos</small></div></div>
+    <div class="stat ${conflicts.length?'danger':'accent'}"><div class="k">Conflitos</div><div class="v">${conflicts.length}</div></div>
+  </div>
+  <div class="grid" style="grid-template-columns:1.4fr 1fr;gap:16px">
+    <div class="panel">
+      <div class="ph"><h2>⚠ Conflitos de stock</h2><div class="spacer"></div><span class="hint">sobre-alocação em datas sobrepostas</span></div>
+      <div class="pb">${conflictHtml}</div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h2>Próximos eventos</h2><div class="spacer"></div><span class="hint">por data</span></div>
+      <div class="pb">${upcomingHtml}</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- inventory ---------- */
+function viewInventory(){
+  const cats = categories();
+  return `
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+    <p class="muted" style="font-size:12px">Defina o <b style="color:var(--text)">stock total</b>. A disponibilidade usa o <b style="color:var(--text)">pico de uso simultâneo</b> — equipamento reutilizado em datas sem sobreposição não conta em duplicado.</p>
+    <div class="spacer" style="flex:1"></div>
+    <button class="btn primary" onclick="addInventory()">+ Novo equipamento</button>
+  </div>
+  ${cats.map(cat=>{
+    const items = state.inventory.filter(i=>i.category===cat);
+    const rows = items.map(i=>{
+      const peak = peakUsage(i.id);
+      const free = i.stock - peak;
+      const dot = free<0?'r':(free===0?'a':'g');
+      return `<tr>
+        <td><div class="name-cell">${esc(i.name)}</div><div class="unit">${esc(i.unit)}${i.notes?' · '+esc(i.notes):''}</div></td>
+        <td class="muted" style="text-align:right">${peak}</td>
+        <td><input class="stock-input" type="number" min="0" value="${i.stock}" onchange="setStock('${i.id}',this.value)"></td>
+        <td class="avail"><span class="dot ${dot}" style="vertical-align:middle;margin-right:6px"></span><span class="num" style="color:${free<0?'var(--danger)':free===0?'var(--amber)':'var(--accent)'}">${free>=0?'+':''}${free}</span> <span class="muted">de margem</span></td>
+        <td style="text-align:right"><button class="btn sm ghost" onclick="editInventory('${i.id}')">Editar</button> <button class="btn sm danger" onclick="delInventory('${i.id}')">✕</button></td>
+      </tr>`;
+    }).join('');
+    return `<div class="cat-block">
+      <div class="cat-head"><span class="dot ${catColor(cat)}"></span><span class="name">${esc(cat)}</span><span class="count">${items.length}</span></div>
+      <div class="panel" style="border-radius:10px">
+        <table class="inv-table">
+          <thead><tr><th>Equipamento</th><th style="text-align:right" title="Máximo em uso ao mesmo tempo, considerando as datas">Pico de uso</th><th>Stock total</th><th>Disponível</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('')}`;
+}
+function catColor(cat){
+  const map={'LED — Tiles':'g','Servidores':'c','Processadores / Switchers':'a','Portáteis':'v','Projetores':'r'};
+  const m=map[cat]; return m?m:'g';
+}
+
+/* ---------- events ---------- */
+function viewEvents(){
+  const evs=[...state.events].sort((a,b)=>a.start.localeCompare(b.start));
+  if(!evs.length) return `<div class="empty"><div class="big">◇</div><p>Ainda não há eventos.</p><button class="btn primary" style="margin-top:14px" onclick="addEvent()">+ Criar primeiro evento</button></div>`;
+  return `
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+    <p class="muted" style="font-size:12px">Cada evento/projeto tem um intervalo de datas. Depois distribui o equipamento em <b style="color:var(--text)">Alocações</b>.</p>
+    <div class="spacer" style="flex:1"></div>
+    <button class="btn primary" onclick="addEvent()">+ Novo evento</button>
+  </div>
+  <div class="ev-grid">
+    ${evs.map(e=>{
+      const allocs = state.allocations.filter(a=>a.eventId===e.id && a.qty>0);
+      const totalQty = allocs.reduce((s,a)=>s+a.qty,0);
+      const day = diffDays(e.start,e.end)+1;
+      return `<div class="ev-card" style="--ec:${e.color}">
+        <div class="bar"></div>
+        <div class="name">${esc(e.name)}</div>
+        <div class="loc">📍 ${esc(e.location)}</div>
+        <div class="dates"><span>${fmtShort(e.start)}</span><span class="arrow">→</span><span>${fmtShort(e.end)}</span><span class="muted" style="margin-left:auto">${day} dia${day>1?'s':''}</span></div>
+        <div class="meta">
+          <span class="chip"><span class="n">${allocs.length}</span> equipamentos</span>
+          <span class="chip"><span class="n">${totalQty}</span> unidades</span>
+        </div>
+        <div class="actions">
+          <button class="btn sm" onclick="selectEvent('${e.id}');go('allocations')">⇄ Alocar</button>
+          <button class="btn sm ghost" onclick="editEvent('${e.id}')">Editar</button>
+          <button class="btn sm danger" onclick="delEvent('${e.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+/* ---------- allocations ---------- */
+function viewAllocations(){
+  if(!state.events.length) return `<div class="empty"><div class="big">◇</div><p>Crie primeiro um evento para poder alocar equipamento.</p><button class="btn primary" style="margin-top:14px" onclick="addEvent()">+ Criar evento</button></div>`;
+  const evs=[...state.events].sort((a,b)=>a.start.localeCompare(b.start));
+  if(!selectedEventId || !eventById(selectedEventId)) selectedEventId = evs[0].id;
+  const ev = eventById(selectedEventId);
+  const cats = categories();
+  const rows = cats.map(cat=>{
+    const items = state.inventory.filter(i=>i.category===cat);
+    const trs = items.map(i=>{
+      const alloc = state.allocations.find(a=>a.eventId===ev.id && a.equipmentId===i.id);
+      const qty = alloc ? alloc.qty : '';
+      const av = availabilityFor(i, ev);
+      const over = qty>av.available;
+      return `<tr>
+        <td><div class="name-cell">${esc(i.name)}</div><div class="unit">${esc(i.unit)}</div></td>
+        <td class="muted" style="text-align:right">${i.stock}</td>
+        <td class="muted" style="text-align:right">${av.inUse}</td>
+        <td class="avail" style="text-align:right"><span class="num" style="color:${av.available<0?'var(--danger)':av.available===0?'var(--amber)':'var(--accent)'}">${av.available>=0?'':''}${av.available}</span></td>
+        <td><input class="qty-input ${over?'over':''}" type="number" min="0" placeholder="0" value="${qty}" onchange="setAlloc('${ev.id}','${i.id}',this.value)"></td>
+        <td style="text-align:right"><span class="dot ${over?'r':(qty===''?'':'g')}" title="${over?'Acima do disponível':'OK'}"></span></td>
+      </tr>`;
+    }).join('');
+    return `<div class="section-title">${esc(cat)}</div><div class="panel" style="border-radius:10px;margin-bottom:6px"><table class="alloc-table"><thead><tr><th>Equipamento</th><th style="text-align:right">Stock</th><th style="text-align:right">Em uso</th><th style="text-align:right">Disponível</th><th>Quantidade</th><th></th></tr></thead><tbody>${trs}</tbody></table></div>`;
+  }).join('');
+  return `
+  <div class="ev-select">${evs.map(e=>`<button class="chip-btn ${e.id===ev.id?'active':''}" onclick="selectEvent('${e.id}')"><span class="dot" style="background:${e.color}"></span>${esc(e.name)}<span class="d">${fmtShort(e.start)}–${fmtShort(e.end)}</span></button>`).join('')}</div>
+  <div class="alloc-meta">
+    <div class="item">Evento: <b>${esc(ev.name)}</b> <span style="color:var(--dim)">· ${esc(ev.location)}</span></div>
+    <div class="item">Datas: <b>${fmt(ev.start)} → ${fmt(ev.end)}</b></div>
+  </div>
+  ${rows}`;
+}
+
+/* ---------- timeline ---------- */
+function viewTimeline(){
+  const evs=[...state.events].sort((a,b)=>a.start.localeCompare(b.start));
+  if(!evs.length) return `<div class="empty"><div class="big">▦</div><p>Sem eventos para mostrar no calendário.</p></div>`;
+  const DAY_W=58, ROW_H=44, LANE_H=32, GAP=7;
+  let min=evs[0].start, max=evs[0].end;
+  evs.forEach(e=>{ if(e.start<min)min=e.start; if(e.end>max)max=e.end; });
+  min=addDays(min,-1); max=addDays(max,1);
+  const totalDays=diffDays(min,max)+1;
+  const days=[]; for(let i=0;i<totalDays;i++) days.push(addDays(min,i));
+  const today=todayISO();
+
+  const dayCells = days.map(d=>{
+    const dt=new Date(d+'T00:00:00');
+    const dd=String(dt.getDate()).padStart(2,'0');
+    const wd=WD[dt.getDay()];
+    const wk=(dt.getDay()===0||dt.getDay()===6)?' weekend':'';
+    const isT=d===today?' is-today':'';
+    return `<div class="tl-day${wk}${isT}"><span class="wd">${wd}</span><span class="dd">${dd}</span></div>`;
+  }).join('');
+
+  const conflicts=getConflicts();
+  const conflictIds=new Set(conflicts.map(c=>c.equip.id));
+
+  const body = categories().map(cat=>{
+    const items=state.inventory.filter(i=>i.category===cat);
+    const rows=items.map(equip=>{
+      const allocs=state.allocations.filter(a=>a.equipmentId===equip.id)
+        .map(a=>({a,ev:eventById(a.eventId)})).filter(x=>x.ev)
+        .sort((a,b)=>a.ev.start.localeCompare(b.ev.start)||b.ev.end.localeCompare(a.ev.end));
+      const lanes=[];
+      allocs.forEach(x=>{
+        let l=0; while(lanes[l] && lanes[l].some(y=>overlaps(x.ev.start,x.ev.end,y.ev.start,y.ev.end))) l++;
+        (lanes[l]||(lanes[l]=[])).push(x); x.lane=l;
+      });
+      const bars=allocs.map(x=>{
+        const left=diffDays(min,x.ev.start)*DAY_W;
+        const label=`${esc(x.ev.name)} <b>${x.a.qty}</b>`;
+        const textW=Math.ceil((x.ev.name.length+String(x.a.qty).length+2)*7.8)+22;
+        const w=Math.max((diffDays(x.ev.start,x.ev.end)+1)*DAY_W-5, textW);
+        const top=5+x.lane*(LANE_H+GAP);
+        const isConflict=conflictIds.has(equip.id);
+        return `<div class="tl-bar${isConflict?' conflict':''}" style="left:${left}px;top:${top}px;width:${w}px;height:${LANE_H}px;--bar:${x.ev.color}" title="${esc(x.ev.name)} — ${x.a.qty} ${esc(equip.unit)} · ${fmt(x.ev.start)} a ${fmt(x.ev.end)}">${label}</div>`;
+      }).join('');
+      const trackH=5+Math.max(1,lanes.length)*(LANE_H+GAP);
+      const todayLine = (today>=min&&today<=max)?`<div class="tl-today" style="left:${diffDays(min,today)*DAY_W}px"></div>`:'';
+      const dot = conflictIds.has(equip.id)?'r':'g';
+      return `<div class="tl-row" style="min-height:${Math.max(ROW_H,trackH)}px">
+        <div class="tl-label"><div class="nm"><span class="dot ${dot}"></span>${esc(equip.name)}</div><div class="st">stock ${equip.stock} ${esc(equip.unit)}</div></div>
+        <div class="tl-track" style="min-height:${trackH}px">${todayLine}${bars}</div>
+      </div>`;
+    }).join('');
+    return `<div class="tl-group">${esc(cat)}</div>${rows}`;
+  }).join('');
+
+  const legend = evs.map(e=>`<div class="lg"><span class="sw" style="background:${e.color}"></span>${esc(e.name)}</div>`).join('');
+
+  return `
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <p class="muted" style="font-size:12px">Calendário de distribuição do equipamento por datas. Barras vermelhas indicam <b style="color:var(--danger)">conflito</b> (sobre-alocação).</p>
+    <div class="spacer" style="flex:1"></div>
+    <span class="muted" style="font-size:11px">${fmt(min)} → ${fmt(max)}</span>
+  </div>
+  <div class="tl-wrap">
+    <div class="tl">
+      <div class="tl-head">
+        <div class="corner">EQUIPAMENTO</div>
+        <div class="tl-days">${dayCells}</div>
+      </div>
+      ${body}
+    </div>
+  </div>
+  <div class="legend">${legend}</div>`;
+}
+
+/* ---------- actions: inventory ---------- */
+function addInventory(){ openInventoryForm(null); }
+function editInventory(id){ openInventoryForm(equipmentById(id)); }
+function openInventoryForm(item){
+  const existingCats=categories().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  const isEdit=!!item;
+  openModal(isEdit?'Editar equipamento':'Novo equipamento', `
+    <form id="invForm">
+      <div class="field"><label>Nome</label><input id="f-name" required value="${item?esc(item.name):''}" placeholder="ex.: Servidor Resolume"></div>
+      <div class="field row">
+        <div><label>Categoria</label><input id="f-cat" list="catList" value="${item?esc(item.category):''}" placeholder="LED / Servidores / …"></div>
+        <div style="flex:0 0 120px"><label>Unidade</label><input id="f-unit" value="${item?esc(item.unit):'un.'}" placeholder="un. / tiles"></div>
+      </div>
+      <datalist id="catList">${existingCats}</datalist>
+      <div class="field"><label>Stock total</label><input id="f-stock" type="number" min="0" value="${item?item.stock:0}"></div>
+      <div class="field"><label>Notas (opcional)</label><input id="f-notes" value="${item?esc(item.notes):''}"></div>
+    </form>`);
+  document.getElementById('modalSave').onclick = ()=>{
+    const name=document.getElementById('f-name').value.trim();
+    const category=document.getElementById('f-cat').value.trim()||'Outros';
+    const unit=document.getElementById('f-unit').value.trim()||'un.';
+    const stock=Math.max(0,parseInt(document.getElementById('f-stock').value,10)||0);
+    const notes=document.getElementById('f-notes').value.trim();
+    if(!name){ showToast('Indique o nome','err'); return; }
+    if(item){ item.name=name; item.category=category; item.unit=unit; item.stock=stock; item.notes=notes; }
+    else state.inventory.push({id:uid(),name,category,unit,stock,notes});
+    save(); closeModal(); render(); showToast(isEdit?'Equipamento atualizado':'Equipamento adicionado');
+  };
+}
+function delInventory(id){
+  const eq=equipmentById(id);
+  if(!confirm('Eliminar "'+eq.name+'" e todas as suas alocações?')) return;
+  state.inventory=state.inventory.filter(i=>i.id!==id);
+  state.allocations=state.allocations.filter(a=>a.equipmentId!==id);
+  save(); render(); showToast('Equipamento eliminado');
+}
+function setStock(id,val){
+  const eq=equipmentById(id); if(!eq) return;
+  eq.stock=Math.max(0,parseInt(val,10)||0); save(); render(); showToast('Stock atualizado');
+}
+
+/* ---------- actions: events ---------- */
+function addEvent(){ openEventForm(null); }
+function editEvent(id){ openEventForm(eventById(id)); }
+function openEventForm(ev){
+  const isEdit=!!ev;
+  const color=ev?ev.color:EVENT_COLORS[state.events.length%EVENT_COLORS.length];
+  openModal(isEdit?'Editar evento':'Novo evento', `
+    <form id="evForm">
+      <div class="field"><label>Nome do evento</label><input id="f-name" required value="${ev?esc(ev.name):''}" placeholder="ex.: FIL EXPO"></div>
+      <div class="field"><label>Local</label><input id="f-loc" value="${ev?esc(ev.location):''}" placeholder="ex.: CCB"></div>
+      <div class="field row">
+        <div><label>Data início</label><input id="f-start" type="date" value="${ev?ev.start:todayISO()}"></div>
+        <div><label>Data fim</label><input id="f-end" type="date" value="${ev?ev.end:todayISO()}"></div>
+      </div>
+      <div class="field"><label>Cor</label><div class="swatches" id="f-swatches">${EVENT_COLORS.map(c=>`<div class="swatch ${c===color?'sel':''}" style="background:${c}" onclick="pickColor(this,'${c}')"></div>`).join('')}</div><input type="hidden" id="f-color" value="${color}"></div>
+    </form>`);
+  document.getElementById('modalSave').onclick = ()=>{
+    const name=document.getElementById('f-name').value.trim();
+    const location=document.getElementById('f-loc').value.trim();
+    const start=document.getElementById('f-start').value;
+    const end=document.getElementById('f-end').value;
+    const col=document.getElementById('f-color').value;
+    if(!name){ showToast('Indique o nome','err'); return; }
+    if(!start||!end){ showToast('Indique as datas','err'); return; }
+    if(end<start){ showToast('Data fim anterior à de início','err'); return; }
+    if(ev){ ev.name=name; ev.location=location; ev.start=start; ev.end=end; ev.color=col; }
+    else state.events.push({id:uid(),name,location,start,end,color:col});
+    save(); closeModal(); render(); showToast(isEdit?'Evento atualizado':'Evento criado');
+  };
+}
+function pickColor(el,c){
+  document.querySelectorAll('#f-swatches .swatch').forEach(s=>s.classList.remove('sel'));
+  el.classList.add('sel'); document.getElementById('f-color').value=c;
+}
+function delEvent(id){
+  const ev=eventById(id);
+  if(!confirm('Eliminar evento "'+ev.name+'" e as suas alocações?')) return;
+  state.events=state.events.filter(e=>e.id!==id);
+  state.allocations=state.allocations.filter(a=>a.eventId!==id);
+  if(selectedEventId===id) selectedEventId=null;
+  save(); render(); showToast('Evento eliminado');
+}
+
+/* ---------- actions: allocations ---------- */
+function selectEvent(id){ selectedEventId=id; render(); }
+function setAlloc(eventId,equipId,val){
+  const qty=parseInt(val,10);
+  const idx=state.allocations.findIndex(a=>a.eventId===eventId && a.equipmentId===equipId);
+  if(!qty||qty<=0){ if(idx>=0) state.allocations.splice(idx,1); }
+  else if(idx>=0) state.allocations[idx].qty=qty;
+  else state.allocations.push({id:uid(),eventId,equipmentId,qty});
+  save(); render(); // re-render to update status + badges
+}
+
+/* ---------- modal ---------- */
+function openModal(title, bodyHtml){
+  document.getElementById('modalSave').style.display='';
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=bodyHtml;
+  document.getElementById('modalBg').classList.add('show');
+  const first=document.querySelector('#modalBody input'); if(first) setTimeout(()=>first.focus(),50);
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('show'); }
+
+/* ---------- toast ---------- */
+function showToast(msg,type){
+  const t=document.createElement('div'); t.className='t'+(type==='err'?' err':''); t.textContent=msg;
+  document.getElementById('toast').appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),320); },2600);
+}
+
+/* ---------- quick add ---------- */
+function quickAdd(){
+  openModal('Adicionar', `
+    <div style="display:flex;gap:10px;flex-direction:column">
+      <button class="btn" onclick="closeModal();addEvent()">◇ &nbsp;Evento / projeto</button>
+      <button class="btn" onclick="closeModal();addInventory()">▤ &nbsp;Equipamento</button>
+    </div>`);
+  document.getElementById('modalSave').style.display='none';
+}
+
+/* ---------- export / import / reset ---------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='stockroom-export.json'; a.click();
+  URL.revokeObjectURL(a.href); showToast('Dados exportados');
+}
+function importData(input){
+  const f=input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(d&&d.inventory&&d.events&&d.allocations){ state=d; save(); render(); showToast('Dados importados'); } else showToast('Ficheiro inválido','err'); }catch(e){ showToast('Ficheiro inválido','err'); } };
+  r.readAsText(f); input.value='';
+}
+
+/* ---------- clock ---------- */
+function tickClock(){
+  const n=new Date();
+  document.getElementById('clock-t').textContent=n.toLocaleTimeString('pt-PT');
+  document.getElementById('clock-d').textContent=WD[n.getDay()]+' '+n.getDate()+' '+MONTHS[n.getMonth()]+' '+n.getFullYear();
+}
+
+/* ---------- init ---------- */
+const loaded = load();
+state = loaded || seedState();
+if(!loaded) save();
+if(!selectedEventId && state.events.length) selectedEventId=[...state.events].sort((a,b)=>a.start.localeCompare(b.start))[0].id;
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>go(b.dataset.view)));
+tickClock(); setInterval(tickClock,1000);
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Ficheiros locais / de origem que não fazem parte da app
+.openhands/
+*.xlsx
+*.pdf
+.DS_Store
+Thumbs.db
